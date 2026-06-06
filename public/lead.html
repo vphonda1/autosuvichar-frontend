@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interested? — जानकारी भेजें</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background:#0a0a0a; color:#eee; margin:0;
+      display:flex; align-items:center; justify-content:center; min-height:100vh; padding:16px; }
+    .card { width:100%; max-width:380px; background:#161616; border:1px solid #2a2a2a;
+      border-radius:18px; padding:22px; }
+    h1 { font-size:20px; margin:0 0 4px; }
+    p.sub { color:#999; font-size:13px; margin:0 0 18px; }
+    input, select { width:100%; box-sizing:border-box; background:#222; border:1px solid #333;
+      color:#fff; border-radius:10px; padding:11px; font-size:15px; margin-bottom:12px; }
+    button { width:100%; border:0; border-radius:10px; padding:13px; font-size:16px; font-weight:600;
+      color:#fff; background:#E4002B; cursor:pointer; }
+    .ok { text-align:center; color:#34d399; font-size:16px; padding:20px 0; }
+    .err { color:#f87171; font-size:13px; margin-bottom:10px; }
+  </style>
+</head>
+<body>
+  <div class="card" id="card">
+    <h1 id="title">हमसे जुड़ें 🙏</h1>
+    <p class="sub">अपनी जानकारी भरें, हमारी टीम जल्द संपर्क करेगी।</p>
+    <div class="err" id="err"></div>
+    <input id="name" placeholder="आपका नाम" />
+    <input id="mobile" placeholder="मोबाइल नंबर *" inputmode="numeric" />
+    <input id="vehicle" placeholder="कौन सी गाड़ी पसंद है?" />
+    <button onclick="submitLead()">भेजें</button>
+  </div>
+
+  <script>
+    // === इन दो को अपने हिसाब से सेट करें ===
+    const API_BASE = "http://localhost:5000"; // अपना backend URL
+    const brand = new URLSearchParams(location.search).get("brand") || "vp_honda";
+
+    async function submitLead() {
+      const err = document.getElementById("err");
+      const mobile = document.getElementById("mobile").value.trim();
+      if (!mobile) { err.textContent = "मोबाइल नंबर ज़रूरी है"; return; }
+      err.textContent = "";
+      try {
+        const res = await fetch(API_BASE + "/api/lead", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            brand,
+            name: document.getElementById("name").value.trim(),
+            mobile,
+            vehicleInterest: document.getElementById("vehicle").value.trim(),
+            source: "post",
+          }),
+        });
+        if (!res.ok) throw new Error("भेजने में समस्या");
+        document.getElementById("card").innerHTML =
+          '<div class="ok">✅ धन्यवाद!<br>हमारी टीम जल्द आपसे संपर्क करेगी।</div>';
+      } catch (e) { err.textContent = e.message; }
+    }
+  </script>
+</body>
+</html>
