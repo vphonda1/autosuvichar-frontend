@@ -337,7 +337,7 @@ export default function DeliveryEditor({ apiBase, token, brandId, onSent }) {
               </div>
               <div className="text-[11px] font-semibold" style={{ color: barStyle === bs.id ? "#ffd400" : "#ccc" }}>{bs.label}</div>
             </button>
-          )}
+          ))}
         </div>
       </div><input className={inp} value={f.name} onChange={(e) => set("name", e.target.value)} /></label>
         <label className="text-xs text-neutral-400">गाड़ी<input className={inp} value={f.vehicle} onChange={(e) => set("vehicle", e.target.value)} /></label>
