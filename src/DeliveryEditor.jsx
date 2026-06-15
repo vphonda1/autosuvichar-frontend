@@ -339,7 +339,7 @@ export default function DeliveryEditor({ apiBase, token, brandId, onSent }) {
             </button>
           ))}
         </div>
-      </div><input className={inp} value={f.name} onChange={(e) => set("name", e.target.value)} /></label>
+      <div><input className={inp} value={f.name} onChange={(e) => set("name", e.target.value)} /></label>
         <label className="text-xs text-neutral-400">गाड़ी<input className={inp} value={f.vehicle} onChange={(e) => set("vehicle", e.target.value)} /></label>
         <label className="text-xs text-neutral-400">हेडलाइन<input className={inp} value={f.headline} onChange={(e) => set("headline", e.target.value)} /></label>
         <label className="text-xs text-neutral-400">छोटी लाइन<input className={inp} value={f.sub} onChange={(e) => set("sub", e.target.value)} /></label>
