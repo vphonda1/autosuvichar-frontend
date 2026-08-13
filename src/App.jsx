@@ -17,6 +17,9 @@ import BrandMemory from "./BrandMemory.jsx";
 import Dashboard from "./Dashboard.jsx";
 import Queue from "./Queue.jsx";
 import Automation from "./Automation.jsx";
+import AIVoice from "./AIVoice.jsx";
+import AIStudio from "./AIStudio.jsx";
+import AINews from "./AINews.jsx";
 import { BRANDS as BRAND_CFG, BRAND_LOGOS, getBrand } from "./brands.js";
 
 // ============================================================================
@@ -275,7 +278,7 @@ export default function App() {
 
   if (!user) return <Login onIn={setUser} />;
 
-  const TABS = [["home", "🏠 होम"], ["queue", "📋 Queue"], ["ai", "🤖 AI बनाओ"], ["automkt", "🚀 Auto Marketing"], ["aidelivery", "📸 AI Delivery"], ["aivideo", "🎬 AI Video"], ["content", "📝 कंटेंट"], ["promo", "📣 विज्ञापन+"], ["mega", "🔥 Mega Offer"], ["booking", "📋 बुकिंग"], ["multibike", "🏍️ Multi Bike"], ["hiring", "💼 भर्ती"], ["luckydraw", "🎉 Lucky Draw"], ["delivery", "🎥 Delivery"], ["leads", "👥 Leads"], ["analytics", "📊 Analytics"], ["aireport", "🧠 AI Report"], ["vehicles", "🏍️ गाड़ियाँ"], ["memory", "🧠 Brand Memory"], ["automation", "🎛️ Automation"], ["notif", "🔔"], ...(isAdmin ? [["settings", "⚙️ Settings"]] : [])];
+  const TABS = [["home", "🏠 होम"], ["queue", "📋 Queue"], ["ai", "🤖 AI बनाओ"], ["automkt", "🚀 Auto Marketing"], ["aidelivery", "📸 AI Delivery"], ["aivideo", "🎬 AI Video"], ["aivoice", "🎙️ AI आवाज़"], ["aistudio", "📱 Platform + Versions"], ["ainews", "📰 खबरें"], ["content", "📝 कंटेंट"], ["promo", "📣 विज्ञापन+"], ["mega", "🔥 Mega Offer"], ["booking", "📋 बुकिंग"], ["multibike", "🏍️ Multi Bike"], ["hiring", "💼 भर्ती"], ["luckydraw", "🎉 Lucky Draw"], ["delivery", "🎥 Delivery"], ["leads", "👥 Leads"], ["analytics", "📊 Analytics"], ["aireport", "🧠 AI Report"], ["vehicles", "🏍️ गाड़ियाँ"], ["memory", "🧠 Brand Memory"], ["automation", "🎛️ Automation"], ["notif", "🔔"], ...(isAdmin ? [["settings", "⚙️ Settings"]] : [])];
 
   return (
     <div style={{ fontFamily: "system-ui" }} className="min-h-screen bg-neutral-950 text-neutral-100 px-4 py-5">
@@ -378,6 +381,30 @@ export default function App() {
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-neutral-400">🎬 Photos से automatic video बनाएं</h2>
             <AIVideo apiBase={API_BASE} token={TOKEN} brandId={brandId} onSent={load} />
+          </div>
+        )}
+
+        {/* ===== AI VOICE (PRD #14) ===== */}
+        {tab === "aivoice" && isAdmin && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-neutral-400">🎙️ बोलकर बताएं — AI script लिखे और आवाज़ बनाए</h2>
+            <AIVoice apiBase={API_BASE} token={TOKEN} brandId={brandId} onSent={load} />
+          </div>
+        )}
+
+        {/* ===== PLATFORM ADAPTER + VARIATIONS (PRD #15,#16,#28) ===== */}
+        {tab === "aistudio" && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-neutral-400">📱 एक बार लिखें — हर platform का अपना version</h2>
+            <AIStudio apiBase={API_BASE} token={TOKEN} brandId={brandId} onSent={load} />
+          </div>
+        )}
+
+        {/* ===== NEWS (PRD #25) ===== */}
+        {tab === "ainews" && isAdmin && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-neutral-400">📰 सिर्फ़ भरोसेमंद sources से — AI खबर नहीं बनाता</h2>
+            <AINews apiBase={API_BASE} token={TOKEN} brandId={brandId} onSent={load} />
           </div>
         )}
 
