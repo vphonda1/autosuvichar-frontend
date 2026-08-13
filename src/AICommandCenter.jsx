@@ -1,6 +1,7 @@
 const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 import React, { useState, useRef, useEffect } from "react";
 import AIPosterCanvas from "./AIPosterCanvas.jsx";
+import QualityCheck from "./QualityCheck.jsx";
 
 const BRAND_LABELS = { vp_honda: "VP Honda", yakuza: "Yakuza EV", minimetro: "Mini Metro" };
 const DEALER_SUB = {
@@ -221,6 +222,15 @@ export default function AICommandCenter({ apiBase, token, brandId, onSent }) {
       {note && (
         <div className={`rounded-xl px-4 py-3 text-sm font-semibold ${note.startsWith("✅") ? "bg-emerald-900/60 text-emerald-300" : "bg-red-900/60 text-red-300"}`}>
           {note}
+        </div>
+      )}
+
+      {/* जो अभी बना है उसे तुरंत quality check करो */}
+      {result?.mode === "generated" && result?.doc?._id && (
+        <div className="rounded-2xl bg-neutral-900 border border-neutral-800 p-3">
+          <p className="text-xs text-neutral-400 mb-1.5">जो अभी बना — publish से पहले जाँच लें:</p>
+          <QualityCheck apiBase={apiBase} token={token} contentId={result.doc._id}
+            brand={result.doc.brand} text={result.doc.text} onFixed={() => { if (onSent) onSent(); }} />
         </div>
       )}
 
