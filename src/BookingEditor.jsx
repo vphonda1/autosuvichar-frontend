@@ -1,5 +1,6 @@
-const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { getBrand, useBrandLogo, useOwnerLogo, drawBothLogos } from "./brands.js";
+const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 
 // ═══════════════════════════════════════════════════════
 // BookingEditor — बुकिंग के फायदे + Festival Offer Poster
@@ -80,12 +81,24 @@ export default function BookingEditor({ apiBase, token, brandId, onSent }) {
 
   // Address
   const [showAddr, setShowAddr]   = useState(true);
-  const [dealerName, setDealerName] = useState("VP Honda");
-  const [dealerSub, setDealerSub]   = useState("VP Honda, परवलिया सड़क, भोपाल");
-  const [phone, setPhone]           = useState("9713394738");
+  // ⚠️ पहले तीनों brands पर "VP Honda" hardcoded था — अब brand बदलते ही बदल जाता है
+  const B0 = getBrand(brandId);
+  const [dealerName, setDealerName] = useState(B0.name);
+  const [dealerSub, setDealerSub]   = useState(B0.address);
+  const [phone, setPhone]           = useState(B0.phone);
+  const [touched, setTouched]       = useState(false);
+  useEffect(() => {
+    if (touched) return;
+    const b = getBrand(brandId);
+    setDealerName(b.name); setDealerSub(b.address); setPhone(b.phone);
+  }, [brandId, touched]);
+  // ⚠️ crossOrigin के बिना canvas tainted हो जाता था → Download/Submit fail
+  const [logoRef, logoTick] = useBrandLogo(apiBase, brandId);
+  // बाएँ मालिक का logo, दाएँ brand/कंपनी का logo — तीनों brands पर
+  const [ownerRef, ownerTick] = useOwnerLogo(apiBase);
 
   // Caption
-  const [caption, setCaption] = useState("🪔 VP Honda में फेस्टिवल बुकिंग महोत्सव! अभी बुक करें और पाएं धमाकेदार फायदे। #VPHonda #Bhopal");
+  const [caption, setCaption] = useState(`🪔 ${B0.name} में फेस्टिवल बुकिंग महोत्सव! अभी बुक करें और पाएं धमाकेदार फायदे।\n📍 ${B0.address}\n${B0.hashtags.join(" ")}`);
 
   const [note, setNote]   = useState("");
   const [busy, setBusy]   = useState(false);
@@ -308,14 +321,10 @@ export default function BookingEditor({ apiBase, token, brandId, onSent }) {
       ctx.fillText(phone, W*0.62, ay+ah*0.8);
     }
 
-    // ── Brand Logo ──
-    const logoUrl = apiBase + `/logos/${brandId === "yakuza" ? "yakuza" : brandId === "minimetro" ? "minimetro" : "vp_honda"}.png`;
-    const logo = new Image(); logo.src = logoUrl;
-    if (logo.complete && logo.naturalWidth > 0) {
-      ctx.drawImage(logo, W-130, 15, 110, 110);
-    } else { logo.onload = () => render(); }
+    // ── Brand Logo (crossOrigin-safe, aspect बना रहता है) ──
+    drawBothLogos(ctx, ownerRef, logoRef, brandId, W, 15, 110);
 
-  }, [bgStyle, headerStyle, bulletColor, addrStyle, mainTitle, subTitle, sectionTitle, bullets, tcText, showTC, bikeImg, showAddr, dealerName, dealerSub, phone, brandId, apiBase]);
+  }, [bgStyle, headerStyle, bulletColor, addrStyle, mainTitle, subTitle, sectionTitle, bullets, tcText, showTC, bikeImg, showAddr, dealerName, dealerSub, phone, brandId, apiBase, logoTick, ownerTick]);
 
   useEffect(() => { render(); }, [render]);
 
@@ -528,7 +537,7 @@ export default function BookingEditor({ apiBase, token, brandId, onSent }) {
             <select value={addrStyle} onChange={e=>setAddrStyle(e.target.value)} className={sel}>
               {ADDR_STYLES.map((a,i)=><option key={a.id} value={a.id}>{["🔴 लाल+काला","🥇 गोल्ड+काला","🔵 नीला+सफ़ेद","⚫ काला+लाल"][i]}</option>)}
             </select>
-            <input value={dealerName} onChange={e=>setDealerName(e.target.value)} className={inp} placeholder="VP Honda"/>
+            <input value={dealerName} onChange={e=>{setTouched(true); setDealerName(e.target.value);}} className={inp} placeholder={B0.name}/>
             <input value={dealerSub} onChange={e=>setDealerSub(e.target.value)} className={inp} placeholder="पता..."/>
             <input value={phone} onChange={e=>setPhone(e.target.value)} className={inp} placeholder="फ़ोन"/>
           </>}

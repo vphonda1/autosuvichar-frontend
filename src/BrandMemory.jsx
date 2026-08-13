@@ -1,7 +1,8 @@
 const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 import React, { useState, useEffect } from "react";
 
-const BRAND_LABELS = { vp_honda: "VP Honda", yakuza: "Yakuza EV", minimetro: "Mini Metro" };
+// ⚠️ पहले हर file में अपनी copy थी — अब brands.js से (एक जगह बदलो, हर जगह बदले)
+import { BRAND_LABELS } from "./brands.js";
 
 const TONES = [
   { v: "friendly",    label: "😊 दोस्ताना" },
@@ -142,7 +143,7 @@ export default function BrandMemory({ apiBase, token, brandId }) {
           <details className="bg-neutral-900 rounded-2xl border border-neutral-800" open>
             <summary className="px-4 py-3 text-sm font-bold text-white cursor-pointer list-none flex justify-between">🏢 Business जानकारी <span className="text-neutral-500">▼</span></summary>
             <div className="px-4 pb-4 space-y-2">
-              <div><p className={lbl}>दिखने वाला नाम</p><input {...F("displayName")} className={inp} placeholder="VP Honda" /></div>
+              <div><p className={lbl}>दिखने वाला नाम</p><input {...F("displayName")} className={inp} placeholder={BRAND_LABELS[brandId] || ""} /></div>
               <div><p className={lbl}>Tagline</p><input {...F("tagline")} className={inp} placeholder="हमारा साथ, आपका विश्वास" /></div>
               <div><p className={lbl}>पता</p><input {...F("address")} className={inp} placeholder="परवलिया सड़क, भोपाल" /></div>
               <div className="grid grid-cols-2 gap-2">

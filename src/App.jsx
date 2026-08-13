@@ -17,6 +17,7 @@ import BrandMemory from "./BrandMemory.jsx";
 import Dashboard from "./Dashboard.jsx";
 import Queue from "./Queue.jsx";
 import Automation from "./Automation.jsx";
+import { BRANDS as BRAND_CFG, BRAND_LOGOS, getBrand } from "./brands.js";
 
 // ============================================================================
 // AutoSuVichar — पूरा Control Panel (Login + सभी sections)
@@ -29,9 +30,13 @@ const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } c
 const STICKER_OPTS = [["", "— कोई sticker नहीं —"], ["1", "लाल तारा"], ["2", "लाल सील"], ["3", "हरा तारा"], ["4", "नीला विस्फोट"], ["5", "नारंगी सील"], ["6", "ब्लैक-गोल्ड मेडल"], ["7", "गोल्ड+लाल सील"], ["8", "लाल टैग (तिरछा)"], ["9", "सफ़ेद-लाल तारा"], ["10", "बैंगनी गोल"]];
 const OFFER_OPTS = [["", "— कोई offer नहीं —"], ["cashback", "कैशबैक"], ["lowdp", "कम डाउन पेमेंट"], ["exchange", "एक्सचेंज बोनस"], ["student", "स्टूडेंट स्पेशल"], ["newyear", "नया साल ऑफर"], ["festival", "फेस्टिव ऑफर"], ["freegift", "फ्री गिफ्ट"]];
 const DECOR_OPTS = [["star", "⭐ तारा"], ["heart", "❤️ दिल"], ["flame", "🔥 ज्वाला"], ["gift", "🎁 गिफ्ट"], ["sparkle", "✨ चमक"], ["check", "✅ टिक"], ["crown", "👑 ताज"], ["rupee", "₹ रुपया"], ["party", "🎉 पार्टी"]];
-const FEATURE_OPTS = ["हाई माइलेज", "ट्यूबलेस टायर", "सेल्फ स्टार्ट", "डिजिटल मीटर", "अलॉय व्हील", "क्रोम प्लेटिंग", "वाइड फ्यूल टैंक", "LED हेडलाइट", "5-स्टेप सस्पेंशन", "डिस्क ब्रेक", "मोबाइल चार्जिंग", "कॉम्बी ब्रेक", "BS6 इंजन", "स्टाइलिश ग्राफिक्स", "कम्फर्ट सीट", "मज़बूत ग्रैब रेल", "साइड स्टैंड इंजन कट", "लो मेंटेनेंस", "इको मोड", "दमदार परफॉर्मेंस"];
+// ⚠️ EV brands पर "BS6 इंजन / फ्यूल टैंक" जैसी बातें नहीं आनी चाहिए — अब brand अनुसार
+const EXTRA_FEATURES = ["स्टाइलिश ग्राफिक्स", "कम्फर्ट सीट", "मज़बूत ग्रैब रेल", "लो मेंटेनेंस", "दमदार परफॉर्मेंस"];
+const featureOptsFor = (bid) => [...(BRAND_CFG[bid]?.features || []), ...EXTRA_FEATURES];
 const BANK_OPTS = ["HDB", "Jana Small Finance", "Muthoot", "IDFC First", "Shriram Finance", "HDFC", "Bajaj Finance", "TATA Capital", "L&T Finance", "Chola"];
-const TAG_OPTS = ["#VPHonda", "#Honda", "#Bhopal", "#BikeOffer", "#BestDeal", "#NewBike", "#Shine", "#SP125", "#Finance", "#Diwali", "#Festival", "#TestRide", "#EMI", "#Exchange"];
+// ⚠️ पहले यह fixed था — Yakuza/Mini Metro पर भी #Honda #Shine छप जाता था
+const COMMON_TAGS = ["#Bhopal", "#BestDeal", "#Finance", "#EMI", "#Exchange", "#TestRide", "#Festival", "#Diwali"];
+const tagOptsFor = (bid) => [...(BRAND_CFG[bid]?.hashtags || []), ...COMMON_TAGS];
 const CONTENT_BG = [["showroom", "🏬 शोरूम"], ["studio", "📸 स्टूडियो"], ["diwali", "🪔 दिवाली"], ["holi", "🎨 होली"], ["navratri", "🌼 नवरात्रि"], ["city", "🌆 शहर"], ["sport", "🔴 लाल स्पोर्टी"], ["blue", "🔵 नीला"], ["showroom_pro", "🏬 शोरूम-प्रो"], ["studio_grad", "📸 स्टूडियो-ग्रेडिएंट"], ["diwali_pro", "🪔 दिवाली-प्रो"], ["templearch_bg", "🛕 मंदिर-आर्क"], ["speed_road", "🛣️ स्पीड-रोड"], ["neon_city", "🌃 नीयन-शहर"], ["gold_lux", "👑 गोल्ड-लग्ज़री"], ["carbon_red", "🏁 कार्बन-रेड"]];
 
 let TOKEN = "";
@@ -137,7 +142,7 @@ export default function App() {
   const [promoForm, setPromoForm] = useState({ model: "", price: "", downPayment: "", cashback: "", features: "", file: null, bg: "light", vehicle: "", cutout: true, aiPrompt: "", offers: [], stickers: [], decor: [], banks: [], tags: [] });
   const [vehicles, setVehicles] = useState([]);
 
-  const brand = brands[brandId] || { accent: "#E4002B", name: "VP Honda" };
+  const brand = brands[brandId] || getBrand(brandId);
   const isAdmin = user && ADMIN.includes(user.role);
 
   useEffect(() => {
@@ -158,7 +163,7 @@ export default function App() {
       if (tab === "leads") setLeads(await api(`/api/leads?brand=${brandId}`));
       if (tab === "analytics") setStats(await api(`/api/analytics?brand=${brandId}`));
       if (tab === "settings" && isAdmin) { setSettings(await api("/api/settings")); try { setHealth(await (await fetch(API_BASE + "/api/health")).json()); } catch (_) {} }
-      if (tab === "promo") setVehicles(await api(`/api/vehicles?brand=${brandId}`));
+      if (tab === "promo") setVehicles(await api(`/api/vehicle-photos?brand=${brandId}`));
     } catch (e) { setErr(e.message); }
   }
   function logout() { setToken(""); setUser(null); }
@@ -204,19 +209,18 @@ export default function App() {
         const blob = await resp.blob();
         const file = new File([blob], "post.png", { type: "image/png" });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], text, title: brand.name || "VP Honda" });
+          await navigator.share({ files: [file], text, title: brand.name });
           return;
         }
       }
-      await navigator.share({ text: text + (imgUrl ? "\n" + imgUrl : ""), title: brand.name || "VP Honda" });
+      await navigator.share({ text: text + (imgUrl ? "\n" + imgUrl : ""), title: brand.name });
     } catch (e) { if (e.name !== "AbortError") alert("Share error: " + e.message); }
   }
 
-  // ===== BRAND LOGOS (brand के हिसाब से logo) =====
-  const BRAND_LOGOS = {
-    vp_honda: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Honda.svg/120px-Honda.svg.png",
-    md_automobile: null, yakuza_ev: null, mini_metro: null,
-  };
+  // ===== BRAND LOGOS =====
+  // ⚠️ पहले यहाँ Wikipedia का Honda logo था और keys (md_automobile/yakuza_ev/mini_metro)
+  //    असली brand ids से मेल ही नहीं खाती थीं — इसलिए Yakuza/Mini Metro का logo कभी नहीं दिखा।
+  //    अब brands.js से आता है और backend के /logos/ से serve होता है।
 
   // ===== Crop state =====
   const [cropItem, setCropItem] = useState(null);
@@ -258,9 +262,9 @@ export default function App() {
     setBusy(true); setErr("");
     try {
       const fd = new FormData(); fd.append("brand", brandId); fd.append("photo", file);
-      const res = await fetch(API_BASE + "/api/vehicles/upload", { method: "POST", headers: { Authorization: "Bearer " + TOKEN }, body: fd });
+      const res = await fetch(API_BASE + "/api/vehicle-photos/upload", { method: "POST", headers: { Authorization: "Bearer " + TOKEN }, body: fd });
       if (!res.ok) throw new Error("vehicle upload failed");
-      const list = await api(`/api/vehicles?brand=${brandId}`); setVehicles(list);
+      const list = await api(`/api/vehicle-photos?brand=${brandId}`); setVehicles(list);
       const { file: fn } = await res.json(); setPromoForm((p) => ({ ...p, vehicle: fn, file: null }));
     } catch (e) { setErr(e.message); } setBusy(false);
   }
@@ -413,7 +417,7 @@ export default function App() {
               <DropPick label="Offers (एक या कई)" options={OFFER_OPTS.filter(([v]) => v)} selected={cOffers} color={brand.accent} onToggle={(v) => setCOffers((a) => toggleIn(a, v))} />
               <DropPick label="Sticker design (एक या कई)" options={STICKER_OPTS.filter(([v]) => v)} selected={cStickers} color={brand.accent} onToggle={(v) => setCStickers((a) => toggleIn(a, v))} />
               <DropPick label="Emoji / सजावट (एक या कई)" options={DECOR_OPTS} selected={cDecor} color={brand.accent} onToggle={(v) => setCDecor((a) => toggleIn(a, v))} />
-              <DropPick label="🏷️ टैग / हैशटैग (caption में जुड़ेंगे)" options={TAG_OPTS.map((x) => [x, x])} selected={cTags} color="#1565c0" onToggle={(v) => setCTags((a) => toggleIn(a, v))} />
+              <DropPick label="🏷️ टैग / हैशटैग (caption में जुड़ेंगे)" options={tagOptsFor(brandId).map((x) => [x, x])} selected={cTags} color="#1565c0" onToggle={(v) => setCTags((a) => toggleIn(a, v))} />
             </div>
             <div className="mb-2">
                 <label className="text-xs text-neutral-400 block mb-1">✏️ खुद लिखें (सुविचार/शुभप्रभात) — खाली रखें तो AI लिखेगा</label>
@@ -428,12 +432,12 @@ export default function App() {
               {/* Image + Logo overlay */}
               <div className="relative">
                 {p.video ? <video src={media(p.video)} controls className="w-full max-h-96 bg-black" /> : <img src={media(p.imgUrl || p.images?.square)} alt="" className="w-full" />}
-                {BRAND_LOGOS[brandId] && <img src={BRAND_LOGOS[brandId]} alt="logo" className="absolute top-2 right-2 h-8 object-contain opacity-80" style={{filter:"drop-shadow(0 1px 3px rgba(0,0,0,0.5))"}}/>}
+                {BRAND_LOGOS[brandId] && <img src={API_BASE + BRAND_LOGOS[brandId]} alt={brand.name} className={"absolute top-2 right-2 h-9 object-contain " + (getBrand(brandId).logoOnLight ? "bg-white/90 rounded-md p-0.5" : "opacity-90")} style={{filter:"drop-shadow(0 1px 3px rgba(0,0,0,0.5))"}}/>}
               </div>
               {/* Download + Crop buttons */}
               {!p.video && (p.imgUrl || p.images?.square) && (
                 <div className="flex gap-1 bg-neutral-800 border-t border-neutral-700">
-                  <a href={media(p.imgUrl || p.images?.square)} download={`vphonda-${p._id}.png`} target="_blank" rel="noreferrer" className="flex-1 text-center text-xs py-2 text-neutral-200">⬇ Download</a>
+                  <a href={media(p.imgUrl || p.images?.square)} download={`${brandId}-${p._id}.png`} target="_blank" rel="noreferrer" className="flex-1 text-center text-xs py-2 text-neutral-200">⬇ Download</a>
                   <button onClick={() => { vib(20); setCropItem(p); }} className="flex-1 text-center text-xs py-2 text-neutral-200 border-l border-neutral-700">✂️ Crop / Edit</button>
                 </div>
               )}
@@ -473,7 +477,7 @@ export default function App() {
             <div>
               <span className="text-xs text-neutral-400">Background डिज़ाइन</span>
               <div className="flex flex-wrap gap-2 mt-1">
-                {[["light", "साफ़ (Honda जैसा)"], ["brand", "ब्रांड रंग"], ["dark", "डार्क"], ["ai", "🤖 AI नज़ारा"]].map(([v, lbl]) => (
+                {[["light", "साफ़ (सफ़ेद)"], ["brand", "ब्रांड रंग"], ["dark", "डार्क"], ["ai", "🤖 AI नज़ारा"]].map(([v, lbl]) => (
                   <Pill key={v} on={promoForm.bg === v} color={brand.accent} onClick={() => setPromoForm({ ...promoForm, bg: v })}>{lbl}</Pill>
                 ))}
               </div>
@@ -495,7 +499,7 @@ export default function App() {
             <label className="block"><span className="text-xs text-neutral-400">नई गाड़ी की फोटो library में जोड़ें (transparent PNG सबसे अच्छा)</span>
               <input type="file" accept="image/*" onChange={(e) => uploadVehicle(e.target.files[0])} className="block w-full text-sm mt-1 text-neutral-300" /></label>
 
-            <input placeholder="गाड़ी का नाम (Honda Shine 100)" value={promoForm.model} onChange={(e) => setPromoForm({ ...promoForm, model: e.target.value })} className="w-full bg-neutral-800 rounded-lg p-2 text-sm outline-none" />
+            <input placeholder={`${getBrand(brandId).vehicleWord} का नाम (${getBrand(brandId).products[0]})`} value={promoForm.model} onChange={(e) => setPromoForm({ ...promoForm, model: e.target.value })} className="w-full bg-neutral-800 rounded-lg p-2 text-sm outline-none" />
             <input placeholder="एक्स-शोरूम कीमत (70196)" value={promoForm.price} onChange={(e) => setPromoForm({ ...promoForm, price: e.target.value })} className="w-full bg-neutral-800 rounded-lg p-2 text-sm outline-none" />
             <div className="flex gap-2">
               <input placeholder="डाउन पेमेंट (4999)" value={promoForm.downPayment} onChange={(e) => setPromoForm({ ...promoForm, downPayment: e.target.value })} className="w-1/2 bg-neutral-800 rounded-lg p-2 text-sm outline-none" />
@@ -509,10 +513,10 @@ export default function App() {
               <DropPick label="Offers (एक या कई)" options={OFFER_OPTS.filter(([v]) => v)} selected={promoForm.offers} color={brand.accent} onToggle={(v) => setPromoForm((f) => ({ ...f, offers: toggleIn(f.offers, v) }))} />
               <DropPick label="Sticker design (एक या कई)" options={STICKER_OPTS.filter(([v]) => v)} selected={promoForm.stickers} color={brand.accent} onToggle={(v) => setPromoForm((f) => ({ ...f, stickers: toggleIn(f.stickers, v) }))} />
               <DropPick label="Emoji / सजावट (एक या कई)" options={DECOR_OPTS} selected={promoForm.decor} color={brand.accent} onToggle={(v) => setPromoForm((f) => ({ ...f, decor: toggleIn(f.decor, v) }))} />
-              <DropPick label="फीचर चुनें (एक या कई — नीचे text भी edit कर सकते हैं)" options={FEATURE_OPTS.map((x) => [x, x])} selected={promoForm.features.split(",").map((s) => s.trim()).filter(Boolean)} color={brand.accent} onToggle={(v) => setPromoForm((f) => { const a = f.features.split(",").map((s) => s.trim()).filter(Boolean); return { ...f, features: toggleIn(a, v).join(", ") }; })} />
+              <DropPick label="फीचर चुनें (एक या कई — नीचे text भी edit कर सकते हैं)" options={featureOptsFor(brandId).map((x) => [x, x])} selected={promoForm.features.split(",").map((s) => s.trim()).filter(Boolean)} color={brand.accent} onToggle={(v) => setPromoForm((f) => { const a = f.features.split(",").map((s) => s.trim()).filter(Boolean); return { ...f, features: toggleIn(a, v).join(", ") }; })} />
               <input placeholder="फीचर (comma से, खुद भी लिख सकते हैं)" value={promoForm.features} onChange={(e) => setPromoForm({ ...promoForm, features: e.target.value })} className="w-full bg-neutral-800 rounded-lg p-2 text-sm outline-none" />
               <DropPick label="फाइनेंस — बैंक चुनें (एक या कई)" options={BANK_OPTS.map((x) => [x, x])} selected={promoForm.banks} color="#16a34a" onToggle={(v) => setPromoForm((f) => ({ ...f, banks: toggleIn(f.banks, v) }))} />
-              <DropPick label="टैग / हैशटैग (एक या कई — caption में जुड़ेंगे)" options={TAG_OPTS.map((x) => [x, x])} selected={promoForm.tags} color="#1565c0" onToggle={(v) => setPromoForm((f) => ({ ...f, tags: toggleIn(f.tags, v) }))} />
+              <DropPick label="टैग / हैशटैग (एक या कई — caption में जुड़ेंगे)" options={tagOptsFor(brandId).map((x) => [x, x])} selected={promoForm.tags} color="#1565c0" onToggle={(v) => setPromoForm((f) => ({ ...f, tags: toggleIn(f.tags, v) }))} />
             </div>
             {promoForm.vehicle && <p className="text-[11px] text-emerald-400">चुनी गई गाड़ी: {promoForm.vehicle}</p>}
             <button onClick={() => { vib(50); submitPromo(); }} disabled={busy} style={{ background: brand.accent }} className="w-full rounded-xl py-3 font-semibold text-white disabled:opacity-50">{busy ? "Poster बना रहे हैं…" : "📣 विज्ञापन Poster बनाएँ"}</button>
@@ -523,7 +527,7 @@ export default function App() {
         {/* ===== MEGA OFFER EDITOR ===== */}
         {tab === "mega" && isAdmin && (
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-neutral-400">🔥 Mega Offer Poster — Power Honda Style</h2>
+            <h2 className="text-sm font-semibold text-neutral-400">🔥 Mega Offer Poster</h2>
             <MegaOfferEditor apiBase={API_BASE} token={TOKEN} brandId={brandId} onSent={load} />
           </div>
         )}
@@ -564,7 +568,7 @@ export default function App() {
             <label className="block"><span className="text-xs text-neutral-400">Customer फोटो</span>
               <input type="file" accept="image/*" onChange={(e) => setForm({ ...form, file: e.target.files[0] })} className="block w-full text-sm mt-1 text-neutral-300" /></label>
             <input placeholder="Customer नाम (S.S TOMAR)" value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} className="w-full bg-neutral-800 rounded-lg p-2 text-sm outline-none" />
-            <input placeholder="गाड़ी (Honda Shine)" value={form.bikeName} onChange={(e) => setForm({ ...form, bikeName: e.target.value })} className="w-full bg-neutral-800 rounded-lg p-2 text-sm outline-none" />
+            <input placeholder={`${getBrand(brandId).vehicleWord} (${getBrand(brandId).products[0]})`} value={form.bikeName} onChange={(e) => setForm({ ...form, bikeName: e.target.value })} className="w-full bg-neutral-800 rounded-lg p-2 text-sm outline-none" />
             <label className="text-xs text-neutral-400 block">🎨 तैयार background (video)
               <select value={form.bg} onChange={(e) => setForm({ ...form, bg: e.target.value })} className="w-full bg-neutral-800 rounded-lg p-2 text-sm border border-neutral-700 mt-1 text-white">
                 <option value="auto">अपने-आप (ब्रांड रंग)</option>

@@ -1,7 +1,8 @@
 const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 import React, { useState, useRef, useEffect } from "react";
 
-const BRAND_LABELS = { vp_honda: "VP Honda", yakuza: "Yakuza EV", minimetro: "Mini Metro" };
+// ⚠️ पहले हर file में अपनी copy थी — अब brands.js से (एक जगह बदलो, हर जगह बदले)
+import { BRAND_LABELS } from "./brands.js";
 
 function uid() { return "v" + Date.now() + Math.random().toString(36).slice(2, 5); }
 

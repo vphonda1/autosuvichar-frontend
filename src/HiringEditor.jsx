@@ -1,5 +1,6 @@
-const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { getBrand, useBrandLogo, useOwnerLogo, drawBothLogos } from "./brands.js";
+const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 
 const W = 1080, H = 1350;
 
@@ -34,9 +35,20 @@ export default function HiringEditor({ apiBase, token, brandId, onSent }) {
   const resizeR = useRef(null);
 
   const [bg, setBg] = useState("white");
-  const [companyName, setCompanyName] = useState("VP Honda");
-  const [phone, setPhone]   = useState("9713394738");
-  const [address, setAddress] = useState("परवलिया सड़क, भोपाल - 462030");
+  // ⚠️ brand-aware — Yakuza/Mini Metro की hiring post पर भी VP Honda छप रहा था
+  const B0 = getBrand(brandId);
+  const [companyName, setCompanyName] = useState(B0.name);
+  const [phone, setPhone]   = useState(B0.phone);
+  const [address, setAddress] = useState(B0.addressShort);
+  const [touched, setTouched] = useState(false);
+  useEffect(() => {
+    if (touched) return;
+    const b = getBrand(brandId);
+    setCompanyName(b.name); setPhone(b.phone); setAddress(b.addressShort);
+  }, [brandId, touched]);
+  const [logoRef, logoTick] = useBrandLogo(apiBase, brandId);
+  // बाएँ मालिक का logo, दाएँ brand/कंपनी का logo — तीनों brands पर
+  const [ownerRef, ownerTick] = useOwnerLogo(apiBase);
 
   const [qrImg, setQrImg]     = useState(null);
   const [qrPos, setQrPos]     = useState({ x: W*.21, y: 480, w: W*.58, h: W*.58 });
@@ -140,12 +152,9 @@ export default function HiringEditor({ apiBase, token, brandId, onSent }) {
     ctx.fillStyle = "#fff"; ctx.font = `900 ${W * .05}px "Arial Black",Arial`;
     ctx.fillText(phone, W - 20, fY + 58);
 
-    const logo = new Image();
-    logo.src = apiBase + `/logos/${brandId==="yakuza"?"yakuza":brandId==="minimetro"?"minimetro":"vp_honda"}.png`;
-    if (logo.complete && logo.naturalWidth>0) ctx.drawImage(logo, W-110, 15, 90, 90);
-    else logo.onload = () => render();
+    drawBothLogos(ctx, ownerRef, logoRef, brandId, W, 15, 90);
 
-  }, [bg, qrImg, qrPos, elems, selId, companyName, phone, address, brandId, apiBase]);
+  }, [bg, qrImg, qrPos, elems, selId, companyName, phone, address, brandId, apiBase, logoTick, ownerTick]);
 
   function draw3DRect(ctx, x, y, w, h, bs, text, fs) {
     const r = Math.min(14, h * .25);
@@ -340,7 +349,7 @@ export default function HiringEditor({ apiBase, token, brandId, onSent }) {
       <details className="bg-neutral-900 rounded-2xl border border-neutral-800">
         <summary className="px-4 py-3 text-sm font-bold text-white cursor-pointer list-none flex justify-between">🏢 Company Info <span className="text-neutral-500">▼</span></summary>
         <div className="px-4 pb-4 space-y-2">
-          <input value={companyName} onChange={e => setCompanyName(e.target.value)} className={inp} placeholder="VP Honda" />
+          <input value={companyName} onChange={e => {setTouched(true); setCompanyName(e.target.value);}} className={inp} placeholder={B0.name} />
           <input value={phone} onChange={e => setPhone(e.target.value)} className={inp} placeholder="फ़ोन" />
           <input value={address} onChange={e => setAddress(e.target.value)} className={inp} placeholder="पता" />
         </div>

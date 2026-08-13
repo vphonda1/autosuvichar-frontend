@@ -1,5 +1,6 @@
-const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { getBrand, useBrandLogo, useOwnerLogo, drawBothLogos } from "./brands.js";
+const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 
 const W = 1080, H = 1080;
 
@@ -71,9 +72,20 @@ export default function MultibikeEditor({ apiBase, token, brandId, onSent }) {
 
   // Address
   const [showAddr,  setShowAddr]  = useState(true);
-  const [dealer,    setDealer]    = useState("VP Honda");
-  const [dealerSub, setDealerSub] = useState("VP Honda, परवलिया सड़क, भोपाल");
-  const [phone,     setPhone]     = useState("9713394738");
+  // ⚠️ brand-aware (पहले हमेशा VP Honda छपता था)
+  const B0 = getBrand(brandId);
+  const [dealer,    setDealer]    = useState(B0.name);
+  const [dealerSub, setDealerSub] = useState(B0.address);
+  const [phone,     setPhone]     = useState(B0.phone);
+  const [touched,   setTouched]   = useState(false);
+  useEffect(() => {
+    if (touched) return;
+    const b = getBrand(brandId);
+    setDealer(b.name); setDealerSub(b.address); setPhone(b.phone);
+  }, [brandId, touched]);
+  const [logoRef, logoTick] = useBrandLogo(apiBase, brandId);
+  // बाएँ मालिक का logo, दाएँ brand/कंपनी का logo — तीनों brands पर
+  const [ownerRef, ownerTick] = useOwnerLogo(apiBase);
 
   // Bikes
   const [bikes,   setBikes]   = useState(DEFAULT_BIKES);
@@ -258,13 +270,10 @@ export default function MultibikeEditor({ apiBase, token, brandId, onSent }) {
       ctx.font=`900 ${ah*.55}px "Arial Black",Arial`; ctx.fillText(phone,W-16,ay+ah*.72);
     }
 
-    // ── LOGO ─────────────────────────────────────────────────────
-    const logoUrl=apiBase+`/logos/${brandId==="yakuza"?"yakuza":brandId==="minimetro"?"minimetro":"vp_honda"}.png`;
-    const logo=new Image(); logo.src=logoUrl;
-    if(logo.complete&&logo.naturalWidth>0){ ctx.drawImage(logo,W-105,10,90,90); }
-    else logo.onload=()=>render();
+    // ── LOGO (crossOrigin-safe) ──────────────────────────────────
+    drawBothLogos(ctx, ownerRef, logoRef, brandId, W, 10, 90);
 
-  }, [bg,headerStyle,priceBoxStyle,addrSt,headline1,headline2,subline,activeBikes,showBottom,bottomLeft,bottomRight1,bottomRight2,showAddr,dealer,dealerSub,phone,brandId,apiBase]);
+  }, [bg,headerStyle,priceBoxStyle,addrSt,headline1,headline2,subline,activeBikes,showBottom,bottomLeft,bottomRight1,bottomRight2,showAddr,dealer,dealerSub,phone,brandId,apiBase,logoTick, ownerTick]);
 
   useEffect(()=>{ render(); },[render]);
 
@@ -428,7 +437,7 @@ export default function MultibikeEditor({ apiBase, token, brandId, onSent }) {
           </div>
           {showAddr&&<>
             <select value={addrSt} onChange={e=>setAddrSt(e.target.value)} className={selt}>{ADDR_STYLES.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}</select>
-            <input value={dealer} onChange={e=>setDealer(e.target.value)} className={inp} placeholder="VP Honda"/>
+            <input value={dealer} onChange={e=>{setTouched(true); setDealer(e.target.value);}} className={inp} placeholder={B0.name}/>
             <input value={dealerSub} onChange={e=>setDealerSub(e.target.value)} className={inp} placeholder="पता..."/>
             <input value={phone} onChange={e=>setPhone(e.target.value)} className={inp} placeholder="फ़ोन"/>
           </>}

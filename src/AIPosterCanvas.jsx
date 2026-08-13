@@ -1,5 +1,6 @@
-const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { getBrand, useBrandLogo, useOwnerLogo, drawBothLogos } from "./brands.js";
+const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 
 const W = 1080, H = 1080;
 
@@ -31,6 +32,10 @@ const BTN3D = [
 const ADDR = { bg1: "#E4002B", bg2: "#141414" };
 
 export default function AIPosterCanvas({ apiBase, token, brandId, spec, dealerName, dealerSub, phone, onSent, onBack }) {
+  // ⚠️ crossOrigin-safe logo — वरना canvas tainted होकर Download/Submit fail
+  const [logoRef, logoTick] = useBrandLogo(apiBase, brandId);
+  // बाएँ मालिक का logo, दाएँ brand/कंपनी का logo — तीनों brands पर
+  const [ownerRef, ownerTick] = useOwnerLogo(apiBase);
   const cvRef = useRef(null);
   const dragR = useRef(null);
   const resizeR = useRef(null);
@@ -154,17 +159,14 @@ export default function AIPosterCanvas({ apiBase, token, brandId, spec, dealerNa
     ctx.fillStyle = ADDR.bg2; ctx.fillRect(W * .6, ay, W * .4, ah);
     ctx.textAlign = "left"; ctx.fillStyle = "#fff";
     ctx.font = "26px Arial"; ctx.fillText("📍", 18, ay + ah * .5);
-    ctx.font = `900 34px "Arial Black", Arial`; ctx.fillText(dealerName || "VP Honda", 62, ay + ah * .45);
+    ctx.font = `900 34px "Arial Black", Arial`; ctx.fillText(dealerName || getBrand(brandId).name, 62, ay + ah * .45);
     ctx.font = "22px Arial"; ctx.fillStyle = "rgba(255,255,255,.85)";
-    ctx.fillText(dealerSub || "", 62, ay + ah * .78);
+    ctx.fillText(dealerSub || getBrand(brandId).address, 62, ay + ah * .78);
     ctx.fillStyle = "#fff"; ctx.font = "20px Arial"; ctx.fillText("फ़ोन", W * .62, ay + ah * .38);
-    ctx.fillStyle = "#FFD600"; ctx.font = `900 42px "Arial Black", Arial`; ctx.fillText(phone || "", W * .62, ay + ah * .78);
+    ctx.fillStyle = "#FFD600"; ctx.font = `900 42px "Arial Black", Arial`; ctx.fillText(phone || getBrand(brandId).phone, W * .62, ay + ah * .78);
 
-    const logo = new Image();
-    logo.src = apiBase + `/logos/${brandId === "yakuza" ? "yakuza" : brandId === "minimetro" ? "minimetro" : "vp_honda"}.png`;
-    if (logo.complete && logo.naturalWidth > 0) ctx.drawImage(logo, W - 128, 18, 110, 110);
-    else logo.onload = () => render();
-  }, [bg, headline, hlSize, elems, selId, bikeImg, bikePos, dealerName, dealerSub, phone, brandId, apiBase]);
+    drawBothLogos(ctx, ownerRef, logoRef, brandId, W, 18, 110);
+  }, [bg, headline, hlSize, elems, selId, bikeImg, bikePos, dealerName, dealerSub, phone, brandId, apiBase, logoTick, ownerTick]);
 
   useEffect(() => { render(); }, [render]);
 

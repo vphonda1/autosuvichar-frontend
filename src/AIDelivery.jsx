@@ -1,12 +1,11 @@
-const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 import React, { useState, useRef } from "react";
+import { getBrand, useBrandLogo, useOwnerLogo, drawBothLogos } from "./brands.js";
+const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 
-const BRAND_LABELS = { vp_honda: "VP Honda", yakuza: "Yakuza EV", minimetro: "Mini Metro" };
-const DEALER_SUB = {
-  vp_honda: "VP Honda, परवलिया सड़क, भोपाल",
-  yakuza: "MD Automobiles, भोपाल",
-  minimetro: "MD Automobiles, भोपाल",
-};
+// ⚠️ पहले यहाँ अपनी अलग BRAND_LABELS/DEALER_SUB copy थी (पता भी गलत — "MD Automobiles, भोपाल")
+//    अब सब brands.js से — एक जगह बदलो, हर जगह बदल जाए
+const BRAND_LABELS = { vp_honda: getBrand("vp_honda").name, yakuza: getBrand("yakuza").name, minimetro: getBrand("minimetro").name };
+const DEALER_SUB = { vp_honda: getBrand("vp_honda").address, yakuza: getBrand("yakuza").address, minimetro: getBrand("minimetro").address };
 
 const W = 1080, H = 1080;
 function uid() { return "d" + Date.now() + Math.random().toString(36).slice(2, 5); }
@@ -30,6 +29,10 @@ const QUALITY_BADGE = {
 const inp = "w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-yellow-500 mt-1";
 
 export default function AIDelivery({ apiBase, token, brandId, onSent }) {
+  // ⚠️ crossOrigin-safe logo — वरना canvas tainted होकर submit/download fail
+  const [logoRef, logoTick] = useBrandLogo(apiBase, brandId);
+  // बाएँ मालिक का logo, दाएँ brand/कंपनी का logo — तीनों brands पर
+  const [ownerRef, ownerTick] = useOwnerLogo(apiBase);
   const cvRef = useRef(null);
 
   const [photos, setPhotos] = useState([]);      // [{ id, dataUrl, quality, note, peopleCount }]
@@ -182,27 +185,24 @@ export default function AIDelivery({ apiBase, token, brandId, onSent }) {
 
       // Address bar
       const ay = H * .92, ah = H * .08;
-      c.fillStyle = "#E4002B"; c.fillRect(0, ay, W * .6, ah);
+      c.fillStyle = getBrand(brandId).accent; c.fillRect(0, ay, W * .6, ah);
       c.fillStyle = "#141414"; c.fillRect(W * .6, ay, W * .4, ah);
       c.fillStyle = "#fff"; c.textAlign = "left";
       c.font = "24px Arial"; c.fillText("📍", 16, ay + ah * .5);
-      c.font = `900 32px "Arial Black", Arial`; c.fillText(BRAND_LABELS[brandId] || "VP Honda", 56, ay + ah * .45);
+      c.font = `900 32px "Arial Black", Arial`; c.fillText(BRAND_LABELS[brandId] || getBrand(brandId).name, 56, ay + ah * .45);
       c.font = "20px Arial"; c.fillStyle = "rgba(255,255,255,.85)";
       c.fillText(DEALER_SUB[brandId] || "", 56, ay + ah * .78);
       c.fillStyle = "#fff"; c.font = "18px Arial"; c.fillText("फ़ोन", W * .63, ay + ah * .38);
       c.fillStyle = "#FFD600"; c.font = `900 36px "Arial Black", Arial`;
-      c.fillText("9713394738", W * .63, ay + ah * .78);
+      c.fillText(getBrand(brandId).phone, W * .63, ay + ah * .78);
 
-      // Logo
-      const lg = new Image();
-      lg.src = apiBase + `/logos/${brandId === "yakuza" ? "yakuza" : brandId === "minimetro" ? "minimetro" : "vp_honda"}.png`;
-      if (lg.complete && lg.naturalWidth > 0) c.drawImage(lg, W - 118, 14, 100, 100);
-      else lg.onload = () => c.drawImage(lg, W - 118, 14, 100, 100);
+      // Logo (crossOrigin-safe — वरना canvas tainted होकर submit fail होता था)
+      drawBothLogos(c, ownerRef, logoRef, brandId, W, 14, 100);
     }
   }
 
   // re-render on edits
-  React.useEffect(() => { if (ai && selPhoto) renderCanvas(ai); }, [bg, headline, subLine, customerName, bikeName, selPhotoId, ai]);
+  React.useEffect(() => { if (ai && selPhoto) renderCanvas(ai); }, [bg, headline, subLine, customerName, bikeName, selPhotoId, ai, brandId, logoTick, ownerTick]);
 
   function dlPNG() {
     vib(30);

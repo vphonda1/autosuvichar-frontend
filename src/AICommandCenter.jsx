@@ -3,20 +3,21 @@ import React, { useState, useRef, useEffect } from "react";
 import AIPosterCanvas from "./AIPosterCanvas.jsx";
 import QualityCheck from "./QualityCheck.jsx";
 
-const BRAND_LABELS = { vp_honda: "VP Honda", yakuza: "Yakuza EV", minimetro: "Mini Metro" };
-const DEALER_SUB = {
-  vp_honda: "VP Honda, परवलिया सड़क, भोपाल",
-  yakuza: "MD Automobiles, भोपाल",
-  minimetro: "MD Automobiles, भोपाल",
-};
+// ⚠️ पहले हर file में अपनी copy थी — अब brands.js से (एक जगह बदलो, हर जगह बदले)
+import { BRAND_LABELS, BRAND_ADDRESS, getBrand } from "./brands.js";
+const DEALER_SUB = BRAND_ADDRESS;
 const TYPE_LABELS = { suvichar: "सुविचार", vigyapan: "विज्ञापन", festival: "त्यौहार शुभकामना", suchna: "सूचना", gift: "गिफ्ट प्रचार" };
 
-const EXAMPLES = [
-  "आज VP Honda के Shine का ऑफर बनाओ",
-  "कल सुबह 9 बजे सुविचार schedule करो",
-  "हर दिन शाम 6 बजे Activa का ऑफर भेजो",
-  "Yakuza का त्यौहार पोस्ट बनाओ अभी",
-];
+// ⚠️ उदाहरण अब चुने हुए brand के हिसाब से (पहले सब पर Honda के ही थे)
+const examplesFor = (bid) => {
+  const b = getBrand(bid);
+  return [
+    `आज ${b.name} के ${b.products[0]} का ऑफर बनाओ`,
+    "कल सुबह 9 बजे सुविचार schedule करो",
+    `हर दिन शाम 6 बजे ${b.products[1] || b.products[0]} का ऑफर भेजो`,
+    `${b.name} का त्यौहार पोस्ट बनाओ अभी`,
+  ];
+};
 
 export default function AICommandCenter({ apiBase, token, brandId, onSent }) {
   const [command, setCommand] = useState("");
@@ -173,7 +174,7 @@ export default function AICommandCenter({ apiBase, token, brandId, onSent }) {
           spec={posterSpec}
           dealerName={BRAND_LABELS[posterSpec.__brand || brandId]}
           dealerSub={DEALER_SUB[posterSpec.__brand || brandId]}
-          phone="9713394738"
+          phone={getBrand(posterSpec.__brand || brandId).phone}
           onSent={() => { setPosterSpec(null); setIntent(null); setCommand(""); if (onSent) onSent(); }}
           onBack={() => { vib(15); setPosterSpec(null); }}
         />
@@ -208,7 +209,7 @@ export default function AICommandCenter({ apiBase, token, brandId, onSent }) {
           <div className="pt-1">
             <p className="text-[11px] text-neutral-500 mb-1.5">उदाहरण:</p>
             <div className="flex flex-wrap gap-1.5">
-              {EXAMPLES.map((ex, i) => (
+              {examplesFor(brandId).map((ex, i) => (
                 <button key={i} type="button" onClick={() => { vib(15); setCommand(ex); }}
                   className="text-[11px] px-2.5 py-1.5 rounded-full border border-neutral-700 text-neutral-400 hover:border-yellow-500 hover:text-yellow-400">
                   {ex}

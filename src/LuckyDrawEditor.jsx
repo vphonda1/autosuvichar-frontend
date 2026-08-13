@@ -1,5 +1,6 @@
-const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { getBrand, useBrandLogo, useOwnerLogo, drawBothLogos } from "./brands.js";
+const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 
 const W = 1080, H = 1350;
 
@@ -28,6 +29,11 @@ const inp  = "w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py
 const selt = "w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white outline-none mt-1";
 
 export default function LuckyDrawEditor({ apiBase, token, brandId, onSent }) {
+  const B0 = getBrand(brandId);
+  // ⚠️ crossOrigin-safe logo (वरना canvas tainted → Download/Submit fail)
+  const [logoRef, logoTick] = useBrandLogo(apiBase, brandId);
+  // बाएँ मालिक का logo, दाएँ brand/कंपनी का logo — तीनों brands पर
+  const [ownerRef, ownerTick] = useOwnerLogo(apiBase);
   const cvRef = useRef(null);
   const dragR = useRef(null);
   const resizeR = useRef(null);
@@ -174,13 +180,10 @@ export default function LuckyDrawEditor({ apiBase, token, brandId, onSent }) {
       ctx.restore();
     });
 
-    // Logo
-    const logo = new Image();
-    logo.src = apiBase + `/logos/${brandId==="yakuza"?"yakuza":brandId==="minimetro"?"minimetro":"vp_honda"}.png`;
-    if (logo.complete && logo.naturalWidth>0) ctx.drawImage(logo, W-110, 15, 90, 90);
-    else logo.onload = () => render();
+    // Logo (crossOrigin-safe)
+    drawBothLogos(ctx, ownerRef, logoRef, brandId, W, 15, 90);
 
-  }, [bg, bikes, gifts, elems, selId, brandId, apiBase]);
+  }, [bg, bikes, gifts, elems, selId, brandId, apiBase, logoTick, ownerTick]);
 
   function draw3DRect(ctx, x, y, w, h, bs, text, fs) {
     const r = Math.min(16, h * .3);

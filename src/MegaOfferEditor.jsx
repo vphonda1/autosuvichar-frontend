@@ -1,5 +1,6 @@
-const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 import React, { useState, useRef, useCallback, useEffect } from "react";
+import { getBrand, useBrandLogo, useOwnerLogo, drawBothLogos } from "./brands.js";
+const vib = (ms = 40) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {} };
 
 // ═══════════════════════════════════════════════════════════════
 // MegaOfferEditor v2 — Draggable + Editable 3D buttons
@@ -7,12 +8,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 
 const W = 1080, H = 1080;
 
-// Brand logos (base64 से load होंगे — /logos/ से)
-const BRAND_LOGOS = {
-  vp_honda: "/logos/vp_honda.png",
-  yakuza:   "/logos/yakuza.png",
-  minimetro:"/logos/minimetro.png",
-};
+// Brand की सारी जानकारी अब brands.js से आती है (single source of truth)
 
 const BG_OPTIONS = [
   { id: "yellow_red",  label: "🔥 पीला-लाल",     c1: "#FFD600", c2: "#E4002B" },
@@ -69,19 +65,35 @@ export default function MegaOfferEditor({ apiBase, token, brandId, onSent }) {
   // Address bar
   const [showAddr, setShowAddr] = useState(true);
   const [addrStyle, setAddrStyle] = useState("red_black");
-  const [dealerName, setDealerName] = useState("VP Honda");
-  const [dealerSub, setDealerSub] = useState("VP Honda, परवलिया सड़क, भोपाल");
-  const [phone, setPhone] = useState("9713394738");
+  // ⚠️ पहले तीनों brands पर "VP Honda" hardcoded था — Yakuza/Mini Metro चुनने पर भी
+  //    poster पर VP Honda ही छपता था। अब brand बदलते ही अपने-आप बदल जाता है।
+  const B0 = getBrand(brandId);
+  const [dealerName, setDealerName] = useState(B0.name);
+  const [dealerSub, setDealerSub] = useState(B0.address);
+  const [phone, setPhone] = useState(B0.phone);
+  const [touchedDealer, setTouchedDealer] = useState(false);
+  useEffect(() => {
+    if (touchedDealer) return;                 // user ने खुद बदला हो तो मत छेड़ो
+    const b = getBrand(brandId);
+    setDealerName(b.name); setDealerSub(b.address); setPhone(b.phone);
+  }, [brandId, touchedDealer]);
+
+  // ⚠️ logo को crossOrigin="anonymous" के साथ पहले से load करो —
+  //    वरना canvas "tainted" हो जाता है और toDataURL()/toBlob() SecurityError देते हैं
+  //    (इसी वजह से Download और "Review में भेजें" दोनों चुपचाप fail हो रहे थे)
+  const [logoRef, logoTick] = useBrandLogo(apiBase, brandId);
+  // बाएँ मालिक का logo, दाएँ brand/कंपनी का logo — तीनों brands पर
+  const [ownerRef, ownerTick] = useOwnerLogo(apiBase);
 
   // Draggable elements
   const [elems, setElems] = useState([
-    { id:uid(), type:"subhl",  x:60,  y:310, w:960, h:70,  text:"Honda गाड़ी खरीदने का शानदार मौका", btnStyle:"red3d",   fontSize:32, locked:false },
+    { id:uid(), type:"subhl",  x:60,  y:310, w:960, h:70,  text:`नई ${B0.vehicleWord} खरीदने का शानदार मौका`, btnStyle:"red3d",   fontSize:32, locked:false },
     { id:uid(), type:"offer",  x:555, y:395, w:490, h:145, text:"₹10,000 तक की\nमहाबचत",             btnStyle:"white3d", fontSize:44, locked:false },
     { id:uid(), type:"offer",  x:555, y:550, w:490, h:80,  text:"💰 ₹5,000 कैशबैक",                  btnStyle:"red3d",   fontSize:30, locked:false },
     { id:uid(), type:"offer",  x:555, y:640, w:490, h:80,  text:"🔄 ₹3,000 एक्सचेंज बोनस",           btnStyle:"red3d",   fontSize:30, locked:false },
     { id:uid(), type:"offer",  x:555, y:730, w:490, h:80,  text:"👔 ₹2,000 कॉर्पोरेट डिस्काउंट",    btnStyle:"red3d",   fontSize:30, locked:false },
     { id:uid(), type:"circle", x:55,  y:600, w:170, h:170, text:"सिर्फ\n6.99%\nब्याज दर",            btnStyle:"red3d",   fontSize:26, locked:false },
-    { id:uid(), type:"banner", x:0,   y:828, w:620, h:70,  text:"कम से कम डाउन पेमेंट में Honda घर लाएं", btnStyle:"gold3d", fontSize:24, locked:false },
+    { id:uid(), type:"banner", x:0,   y:828, w:620, h:70,  text:"कम से कम डाउन पेमेंट में घर लाएं", btnStyle:"gold3d", fontSize:24, locked:false },
     { id:uid(), type:"banner", x:620, y:828, w:460, h:70,  text:"📍 आज ही विज़िट करें",              btnStyle:"red3d",   fontSize:26, locked:false },
   ]);
 
@@ -90,7 +102,7 @@ export default function MegaOfferEditor({ apiBase, token, brandId, onSent }) {
   const [btnStyle, setBtnStyle] = useState("red3d");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [caption, setCaption] = useState("🔥 VP Honda में महाबचत! अभी visit करें। #VPHonda #Bhopal");
+  const [caption, setCaption] = useState(`🔥 ${B0.name} में महाबचत! अभी visit करें।\n📍 ${B0.address}\n${B0.hashtags.join(" ")}`);
 
   const selEl = elems.find(e => e.id === selId);
 
@@ -275,17 +287,10 @@ export default function MegaOfferEditor({ apiBase, token, brandId, onSent }) {
       ctx.fillText(phone, W*0.62, ay + ah*0.78);
     }
 
-    // Logo (top right)
-    const logoUrl = BRAND_LOGOS[brandId] || BRAND_LOGOS.vp_honda;
-    const logoImg = new Image();
-    logoImg.src = apiBase + logoUrl;
-    if (logoImg.complete && logoImg.naturalWidth > 0) {
-      ctx.drawImage(logoImg, W-130, 20, 110, 110);
-    } else {
-      logoImg.onload = () => render();
-    }
+    // Logo (top right) — crossOrigin-safe + aspect + Mini Metro के लिए सफ़ेद chip
+    drawBothLogos(ctx, ownerRef, logoRef, brandId, W, 20, 110);
 
-  }, [bg, bikeImg, headline, hlSize, elems, selId, showAddr, addrStyle, dealerName, dealerSub, phone, brandId, apiBase]);
+  }, [bg, bikeImg, headline, hlSize, elems, selId, showAddr, addrStyle, dealerName, dealerSub, phone, brandId, apiBase, logoTick, ownerTick]);
 
   useEffect(() => { render(); }, [render]);
 
@@ -561,9 +566,9 @@ export default function MegaOfferEditor({ apiBase, token, brandId, onSent }) {
             <select value={addrStyle} onChange={e=>setAddrStyle(e.target.value)} className={sel}>
               {ADDR_STYLES.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}
             </select>
-            <input value={dealerName} onChange={e=>setDealerName(e.target.value)} className={inp} placeholder="VP Honda"/>
-            <input value={dealerSub} onChange={e=>setDealerSub(e.target.value)} className={inp} placeholder="पता..."/>
-            <input value={phone} onChange={e=>setPhone(e.target.value)} className={inp} placeholder="फ़ोन"/>
+            <input value={dealerName} onChange={e=>{setTouchedDealer(true); setDealerName(e.target.value);}} className={inp} placeholder={B0.name}/>
+            <input value={dealerSub} onChange={e=>{setTouchedDealer(true); setDealerSub(e.target.value);}} className={inp} placeholder="पता..."/>
+            <input value={phone} onChange={e=>{setTouchedDealer(true); setPhone(e.target.value);}} className={inp} placeholder="फ़ोन"/>
           </>}
         </div>
       </details>
