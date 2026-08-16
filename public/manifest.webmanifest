@@ -1,0 +1,57 @@
+{
+  "name": "Auto Suvichar — VP Honda, Yakuza EV, Mini Metro",
+  "short_name": "Auto Suvichar",
+  "description": "रोज़ का marketing content — पोस्टर, वीडियो, सुविचार और डिलीवरी पोस्ट, सब एक जगह",
+  "lang": "hi",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Review करें",
+      "short_name": "Review",
+      "description": "तैयार पोस्ट देखकर approve करें",
+      "url": "/?tab=home",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "आज का content बनाएँ",
+      "short_name": "आज का",
+      "description": "एक बटन में पूरे दिन का content",
+      "url": "/?tab=autoengine",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "डिलीवरी पोस्ट",
+      "short_name": "डिलीवरी",
+      "description": "ग्राहक की डिलीवरी photo बनाएँ",
+      "url": "/?tab=delivery",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
