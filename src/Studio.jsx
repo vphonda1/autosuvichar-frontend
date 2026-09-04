@@ -29,6 +29,7 @@ import AIStudio from "./AIStudio.jsx";
 import AutoMarketing from "./AutoMarketing.jsx";
 import AutoEngine from "./AutoEngine.jsx";
 import Announcer from "./Announcer.jsx";
+import CompareEditor from "./CompareEditor.jsx";
 
 // ── कौन-सा साँचा किस काम का ───────────────────────────────────────────────
 const TEMPLATES = [
@@ -42,6 +43,7 @@ const TEMPLATES = [
   { id: "mega",      group: "ऑफ़र",   icon: "🔥", name: "Mega Offer",     desc: "बड़ा धमाकेदार ऑफ़र poster" },
   { id: "booking",   group: "ऑफ़र",   icon: "📋", name: "बुकिंग के फ़ायदे", desc: "अभी बुक करने पर क्या मिलेगा" },
   { id: "luckydraw", group: "ऑफ़र",   icon: "🎉", name: "Lucky Draw",     desc: "इनाम वाली स्कीम का poster" },
+  { id: "compare",   group: "ऑफ़र",   icon: "⚖️", name: "तुलना वाला",     desc: "तालिका के साथ — हम बनाम बाक़ी कंपनियाँ" },
   { id: "multibike", group: "ऑफ़र",   icon: "🏁", name: "कई गाड़ियाँ साथ",  desc: "एक ही poster में 3–5 model" },
   { id: "hiring",    group: "ऑफ़र",   icon: "💼", name: "भर्ती",          desc: "स्टाफ़ चाहिए — We Are Hiring" },
 
@@ -233,6 +235,7 @@ export default function Studio({ apiBase, token, brandId, accent, isAdmin, onCha
     mega:      <MegaOfferEditor {...P} />,
     booking:   <BookingEditor {...P} />,
     luckydraw: <LuckyDrawEditor {...P} />,
+    compare:   <CompareEditor {...P} />,
     multibike: <MultibikeEditor {...P} />,
     hiring:    <HiringEditor {...P} />,
     video:     <AIVideo {...P} />,
