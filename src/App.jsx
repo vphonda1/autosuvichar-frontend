@@ -1,17 +1,19 @@
 // ============================================================================
-//  App.jsx — AutoSuVichar
+//  App.jsx — AutoSuVichar  (नया ढाँचा)
 //  ---------------------------------------------------------------------------
-//  पहले: App.jsx अलग से 2 request भेजता था (notifications + pending), और
-//  Today.jsx उन्हीं दोनों को फिर से माँगता था, साथ में 3 और। कुल 7 request,
-//  जिनमें 2 बिल्कुल दोहरी थीं। हर बार app खोलने पर।
+//  पहले: 28 tabs एक ही लाइन में लिपटे हुए। हर काम ढूँढना पड़ता था।
+//  अब:   5 हिस्से, नीचे की पट्टी में — अँगूठे की पहुँच में।
 //
-//  अब: एक request — /api/today. वही डेटा नीचे सबको दे दिया जाता है।
-//  App तेज़ खुलेगा और Render का समय भी बचेगा।
+//      🏠 आज      — अभी क्या करना है (कुछ छूटे नहीं)
+//      ✨ बनाओ     — सारे 9 poster editors + AI, एक ही जगह
+//      🗓️ कैलेंडर  — महीने भर की योजना
+//      📈 नतीजा    — कितना पहुँचा, कितने ग्राहक आए
+//      ⚙️ सेटिंग   — बाक़ी सब (सिर्फ़ admin)
 //
-//  बाक़ी सब जस का तस — 5 हिस्से, नीचे की पट्टी, brand बदलना, सब वैसा ही।
+//  कोई feature हटाया नहीं गया — सिर्फ़ जगह पर रखा गया है।
 // ============================================================================
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { API_BASE, api, getToken, setToken, vib, Err, ADMIN } from "./shared.jsx";
 import { BRANDS as BRAND_CFG, getBrand } from "./brands.js";
 
@@ -81,8 +83,8 @@ export default function App() {
     } catch (_) { return "today"; }
   });
   const [err, setErr] = useState("");
-  const [today, setToday] = useState(null);        // ⭐ पूरे app का एक ही डेटा
-  const [loadingToday, setLoadingToday] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
   const [brandOpen, setBrandOpen] = useState(false);
 
@@ -94,21 +96,19 @@ export default function App() {
   useEffect(() => { if (user) api("/api/brands").then(setBrands).catch(() => {}); }, [user]);
   useEffect(() => { try { localStorage.setItem("asv_brand", brandId); } catch (_) {} }, [brandId]);
 
-  // ── एक ही request — यही पूरे app का पेट भरती है ────────────────────
-  const loadToday = useCallback(async () => {
-    if (!user || !brandId) return;
-    setLoadingToday(true);
+  // बिल्ला (badge) — कितना pending है, कितनी notification अनदेखी है
+  async function refreshBadges() {
+    if (!user) return;
     try {
-      const d = await api(`/api/today?brand=${brandId}`);
-      setToday(d);
-    } catch (e) {
-      // पुराना backend हो (orchestrator.js अभी चढ़ी न हो) तो app फिर भी चले
-      setToday((prev) => prev || { counts: {}, pending: [], leads: [], deliveries: [], notifications: [], blocked: [] });
-    }
-    setLoadingToday(false);
-  }, [user, brandId]);
-
-  useEffect(() => { loadToday(); }, [loadToday, reloadKey]);
+      const [n, p] = await Promise.all([
+        api("/api/notifications").catch(() => ({ unread: 0 })),
+        api(`/api/content?brand=${brandId}&status=pending`).catch(() => []),
+      ]);
+      setUnread(n.unread || 0);
+      setPendingCount(Array.isArray(p) ? p.length : 0);
+    } catch (_) {}
+  }
+  useEffect(() => { refreshBadges(); /* eslint-disable-next-line */ }, [user, brandId, reloadKey]);
 
   // बच्चों से "कुछ बदला" आने पर सब ताज़ा कर दो
   const refresh = () => { setReloadKey((k) => k + 1); };
@@ -116,9 +116,6 @@ export default function App() {
   function logout() { setToken(""); setUser(null); }
 
   if (!user) return <><Login onIn={setUser} /><InstallPrompt /></>;
-
-  const C = (today && today.counts) || {};
-  const badge = (C.pending || 0) + (C.leads || 0) + (C.blocked || 0);
 
   const shared = {
     apiBase: API_BASE, token: getToken(), brandId, brand, user, isAdmin,
@@ -174,7 +171,7 @@ export default function App() {
       <main className="px-4 max-w-3xl mx-auto">
         <Err onClose={() => setErr("")}>{err}</Err>
 
-        {sec === "today"    && <Today    {...shared} today={today} loading={loadingToday} onReload={loadToday} />}
+        {sec === "today"    && <Today    {...shared} unread={unread} />}
         {sec === "studio"   && <Studio   {...shared} />}
         {sec === "calendar" && (
           <GrowthCalendar apiBase={API_BASE} token={getToken()} brandId={brandId}
@@ -190,7 +187,7 @@ export default function App() {
         <div className="max-w-3xl mx-auto flex">
           {visible.map((s) => {
             const on = sec === s.id;
-            const n = s.id === "today" ? badge : 0;
+            const badge = s.id === "today" ? unread + pendingCount : 0;
             return (
               <button key={s.id} onClick={() => { vib(15); setSec(s.id); setBrandOpen(false); }}
                 className="flex-1 flex flex-col items-center gap-0.5 py-2.5 relative">
@@ -198,9 +195,9 @@ export default function App() {
                 <span className="text-[10px]" style={{ color: on ? brand.accent : "#525252", fontWeight: on ? 600 : 400 }}>
                   {s.label}
                 </span>
-                {n > 0 && (
+                {badge > 0 && (
                   <span className="absolute top-1.5 right-[22%] text-[9px] min-w-[15px] h-[15px] px-1 rounded-full bg-red-600 text-white flex items-center justify-center font-semibold">
-                    {n > 99 ? "99" : n}
+                    {badge > 99 ? "99" : badge}
                   </span>
                 )}
                 {on && <span className="absolute top-0 inset-x-[30%] h-0.5 rounded-full" style={{ background: brand.accent }} />}

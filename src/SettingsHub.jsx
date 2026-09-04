@@ -252,19 +252,18 @@ export default function SettingsHub({ apiBase, token, brandId, brand, brands, ac
     <div className="space-y-2">
       <p className="text-[11px] text-neutral-600 mb-1">
         ये कभी-कभार के काम हैं। जिसकी ज़रूरत हो, वही डिब्बा खोलिए।
-        गाड़ियों की क़ीमत सबसे ऊपर है — उसी से हर poster की क़ीमत जाँची जाती है।
       </p>
 
-      <Fold icon="🏍️" title="गाड़ियों की सूची" sub="क़ीमत यहीं से जाती है — AI ख़ुद नहीं बनाता" defaultOpen>
-        <div className="pt-2"><Vehicles apiBase={apiBase} token={token} brandId={brandId} /></div>
-      </Fold>
-
-      <Fold icon="🔗" title="खाते जोड़ें" sub="Facebook, Instagram, WhatsApp, YouTube">
+      <Fold icon="🔗" title="खाते जोड़ें" sub="Facebook, Instagram, WhatsApp, YouTube" defaultOpen>
         <Accounts brands={brands} accent={accent} />
       </Fold>
 
       <Fold icon="🌐" title="Google Business" sub="Search और Maps में दिखें — नया">
         <GoogleBusiness brandId={brandId} accent={accent} />
+      </Fold>
+
+      <Fold icon="🏍️" title="गाड़ियों की सूची" sub="क़ीमत यहीं से जाती है — AI ख़ुद नहीं बनाता">
+        <div className="pt-2"><Vehicles apiBase={apiBase} token={token} brandId={brandId} /></div>
       </Fold>
 
       <Fold icon="🧠" title="दुकान की पहचान" sub="एक बार भरें, AI हमेशा उसी लहजे में लिखेगा">
